@@ -2,13 +2,22 @@
 #include "lsm6dsm.h"
 #include "ServoESP32.h"
 
-// (!) Motorlar ters ise 1 olan değeri -1 yap (!)   
+// (!) Motorlar ters ise 1 olan degeri -1 yap (!)   
 //************************************************
 float a = 1; //Sag aileron                    // *
 float b = 1; //Sol aileron                    // *
 float c = 1; //Elevator                       // *
 float d = 1; //Rudder                         // *
 //************************************************
+
+// Gyro degerlerinde sapma varsa, asagidaki degerleri 
+// pozitif ve negatif olarak buyultup kucultebilirsiniz   
+//*******************************************************
+float e = 0; //Sag aileron                           // *
+float f = 0; //Sol aileron                           // *
+float g = 0; //Elevator                              // *
+float h = 0; //Rudder                                // *
+//******************************************************* 
 
 int servo_sag_aileron_pin = D0;  // Sag Alieron servo motoru
 int servo_sol_aileron_pin = D1;  // Sol Alieorn servo motoru
@@ -75,10 +84,10 @@ void loop() {
   Serial.print(" Rudder =     ");
   Serial.println(IMU_rudder);
 
-  sag_aileron = map(IMU_sag_aileron, 100, -100, 0, 180);
-  sol_aileron = map(IMU_sol_aileron, 100, -100, 0, 180);
-  elevator = map(IMU_elevator, 100, -100, 0, 180);
-  rudder = map(IMU_rudder, 80, -80, 0, 180);
+  sag_aileron = map(IMU_sag_aileron + e, 100, -100, 0, 180);
+  sol_aileron = map(IMU_sol_aileron + f, 100, -100, 0, 180);
+  elevator = map(IMU_elevator + g, 100, -100, 0, 180);
+  rudder = map(IMU_rudder + h, 80, -80, 0, 180);
 
   servo_sag_aileron.write(sag_aileron);
   servo_sol_aileron.write(sol_aileron);
