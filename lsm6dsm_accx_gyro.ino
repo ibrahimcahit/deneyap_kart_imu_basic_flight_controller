@@ -1,86 +1,89 @@
-// İbrahim  Özdemir ve Ozgür Bostan tarafından, 
-// Deneyap Kart için yazılmıştır.
-//
-// GitHub: ibrahimcahit
-//
-
-// Gerekli kütüphaneleri import ediyoruz
 #include "deneyap.h"
 #include "lsm6dsm.h"
 #include "ServoESP32.h"
 
-// ms cinsinden delay süresi belirliyoruz
-#define delayms 300
+// (!) Motorlar ters ise 1 olan değeri -1 yap (!)   
+//************************************************
+float a = 1; //Sag aileron                    // *
+float b = 1; //Sol aileron                    // *
+float c = 1; //Elevator                       // *
+float d = 1; //Rudder                         // *
+//************************************************
 
-// IMU (İvmeölçer) sensörünü başlatmak için bir LSM6DSM class'ı tanımlıyoruz
-LSM6DSM IMU;
+int servo_sag_aileron_pin = D0;  // Sag Alieron servo motoru
+int servo_sol_aileron_pin = D1;  // Sol Alieorn servo motoru
+int servo_elevator_pin = D4;     // Elevator servo motoru
+int servo_rudder_pin = D8;       // Rudder servo motoru
 
-// Servo pinlerini tanımlıyoruz
-int servoXa_pin = D0;  // Sağ Alieron
-int servoXb_pin = D1;  // Sol Alieorn
-int servoY_pin = D4;   // Elevator
-int servoZ_pin = D8;   // Rudder
+float IMU_sag_aileron, IMU_sol_aileron, IMU_elevator, IMU_rudder;
 
-// IMU tarafından okunup, Servo'lara gönderilecek değerlerin tutulacağı değişkenleri tanımlıyoruz
-int16_t axA,axB, ay, az;
-
-// Z ekseninden yaw parametrelerini tanımlamak için değerler tanımlıyoruz
 float gyroz;
 float norm_gyroz;
-float yaw = 0;
+float IMU_rudder_raw = 0;
 float tstep = 0.01;
 
-// Timer değişkeni, süre için
+int16_t sag_aileron, sol_aileron, elevator, rudder;
+
 unsigned long timer = 0;
 
-// Servolarımızı tanımlıyoruz
-Servo servoXa;
-Servo servoXb;
-Servo servoY;
-Servo servoZ;
+LSM6DSM IMU;
 
-void setup ( ) {
+Servo servo_sag_aileron;
+Servo servo_sol_aileron;
+Servo servo_elevator;
+Servo servo_rudder;
 
-  // Servolarımızın pinlerini tanımlıyoruz
-  servoXa.attach (servoXa_pin);
-  servoXb.attach (servoXb_pin);
-  servoY.attach (servoY_pin);
-  servoZ.attach (servoZ_pin);
-
-  // IMU sensörümüzü başlatıyoruz. IMU, I2C kullanıyor. 
-  IMU.begin();
-
-  delay (100);
+void setup() {
   
+  Serial.begin(115200);
+  Serial.println("Seri port açıldı");
+  
+  servo_sag_aileron.attach(servo_sag_aileron_pin);
+  servo_sol_aileron.attach(servo_sol_aileron_pin);
+  servo_elevator.attach(servo_elevator_pin);
+  servo_rudder.attach(servo_rudder_pin);
+  Serial.println("Servolar aktif edildi");
+
+  IMU.begin();
+  Serial.println("IMU devrede");
+  
+  delay (100);
 }
 
-void loop ( ) {
+void loop() {
 
   timer = millis();
 
-  // Z eksenindeki Gyro değerini okuyoruz
+  IMU_sag_aileron = IMU.readFloatAccelX() * -100 * a;
+  IMU_sol_aileron = IMU.readFloatAccelX() * -100 * b; 
+  IMU_elevator = IMU.readFloatAccelY() * 100 * c;
+
   gyroz = IMU.readFloatGyroZ();
-
-  // Gyro değerininin zamana göre değişimini bulmamız gerek. Sabit ile çarpıp, normal istediğimiz değerini buluyoruz. 
   norm_gyroz = gyroz * 0.007633f;
+  IMU_rudder_raw = IMU_rudder_raw + norm_gyroz * tstep;
+  IMU_rudder = IMU_rudder_raw * 100 * d;
 
-  // Yaw değerimizi hesaplıyoruz
-  yaw = yaw + norm_gyroz * tstep;
+  Serial.print("*********************");
+  Serial.println();
 
-  // X ve Y eksenlerindeki hareketleri (Elevator ve Alieron)ivmelçer ile direkt kontrol edebiliriz. 
-  // İvme ölçerin verdiği değerleri 100 ile çarpıp, 0 - 180 aralığında map ediyoruz  
-  axA = map (IMU.readFloatAccelX() * -100, -100, 100, 0, 180);
-  axB = map (IMU.readFloatAccelX() * -100, -100, 100, 0, 180);
-  ay = map (IMU.readFloatAccelY() * 100, -100, 100, 0, 180);
-  
-  az = map (yaw, -100, 100, 0, 180); 
+  Serial.print(" Sag Aileron = ");
+  Serial.println(IMU_sag_aileron);
+  Serial.print(" Sol Aileron = ");
+  Serial.println(IMU_sol_aileron);
+  Serial.print(" Elevator =    ");
+  Serial.println(IMU_elevator);
+  Serial.print(" Rudder =     ");
+  Serial.println(IMU_rudder);
 
-  // Değerleri servolara yazıyoruz
-  servoXa.write (axA);
-  servoXb.write (axB);
-  servoY.write (ay);
-  servoZ.write (az);
+  sag_aileron = map(IMU_sag_aileron, 100, -100, 0, 180);
+  sol_aileron = map(IMU_sol_aileron, 100, -100, 0, 180);
+  elevator = map(IMU_elevator, 100, -100, 0, 180);
+  rudder = map(IMU_rudder, 80, -80, 0, 180);
+
+  servo_sag_aileron.write(sag_aileron);
+  servo_sol_aileron.write(sol_aileron);
+  servo_elevator.write(elevator);
+  servo_rudder.write(rudder);
 
   delay((tstep * 1000) - (millis() - timer));
-
 }
