@@ -11,6 +11,10 @@ Deneyap Kart kütüphanesini indirmeniz gerekmektedir:
 * [Deneyap Kart kurulumu](https://docs.deneyapkart.org/) 
 * [LSM6DSM Datasheet](https://www.st.com/resource/en/datasheet/lsm6dsm.pdf)
 
+## Bağlantı Şeması
+
+![image](https://raw.githubusercontent.com/ibrahimcahit/deneyap_kart_imu_basic_flight_controller/main/scheme.jpg)
+
 ## Nasıl Çalışıyor?
 
 İlk başta gerekli kütüphaneleri import ediyoruz:
